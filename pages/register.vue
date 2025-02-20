@@ -67,6 +67,16 @@ async function submit() {
                 password: password.value,
             },
         })
+
+        Swal.fire({
+            title: 'Success!',
+            text: 'Account created successfully.',
+            icon: 'success',
+            confirmButtonText: 'Close',
+            color: 'gray',
+            background: '#18181B',
+            confirmButtonColor: 'green',
+        })
     } catch (error) {
         console.log('ERROR')
         console.log(error.response?._data?.message)
