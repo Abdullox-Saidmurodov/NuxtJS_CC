@@ -11,11 +11,14 @@
 // - Used to prevent hackers from using precomputed hash tables to crack a PW
 // - Each user gets their own salt so even if two users have the same PW their password's look completely different
 
+// Generate secret:
+// - node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import validator from 'validator'
+import jwt from 'jsonwebtoken'
 
 const prisma = new PrismaClient()
 
@@ -54,6 +57,14 @@ export default defineEventHandler(async (event) => {
                 salt: salt,
             }
         })
+
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET)
+
+        console.log('TOKEN:')
+        console.log(token)
+
+        setCookie(event, 'NoteNestJWT', token)
+
         return { data: 'success!' }
     } catch (error) {
         // console.error(error.code)
