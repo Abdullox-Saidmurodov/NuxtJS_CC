@@ -56,9 +56,6 @@ const email = ref('')
 const password = ref('')
 
 async function submit() {
-    // console.log("submit")
-    // console.log(email.value)
-    // console.log(password.value)
 
     const response = await $fetch('/api/user', {
         method: 'POST',
@@ -69,18 +66,5 @@ async function submit() {
     })
 
     console.log(response)
-    // try {
-    //     const response = await $fetch('/api/user', {
-    //         method: 'POST',
-    //         body: {
-    //             email: email.value,
-    //             password: password.value,
-    //         },
-    //     })
-
-    //     console.log(response)
-    // } catch (err) {
-    //     console.log(err)
-    // }
 }
 </script>
