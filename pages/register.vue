@@ -52,19 +52,33 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2'
+
 const email = ref('')
 const password = ref('')
 
 async function submit() {
 
-    const response = await $fetch('/api/user', {
-        method: 'POST',
-        body: {
-            email: email.value,
-            password: password.value,
-        },
-    })
-
-    console.log(response)
+    try {
+        const response = await $fetch('/api/user', {
+            method: 'POST',
+            body: {
+                email: email.value,
+                password: password.value,
+            },
+        })
+    } catch (error) {
+        console.log('ERROR')
+        console.log(error.response?._data?.message)
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?._data?.message,
+            icon: 'error',
+            confirmButtonText: 'Close',
+            color: 'gray',
+            background: '#18181B',
+            confirmButtonColor: '#ff5d00',
+        })
+    }
 }
 </script>

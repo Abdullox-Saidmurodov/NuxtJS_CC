@@ -19,22 +19,31 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 export default defineEventHandler(async (event) => {
-    const body = await readBody(event)
-    // console.log("HELLO")
-    // console.log(body)
-
-    const salt = await bcrypt.genSalt(10)
-    const passwordHash = await bcrypt.hash(body.password, salt)
-
-    // Sends to database
-    const user = await prisma.User.create({
-        data: {
-            email: body.email,
-            password: passwordHash,
-            salt: salt,
+    try {
+        const body = await readBody(event)
+        const salt = await bcrypt.genSalt(10)
+        const passwordHash = await bcrypt.hash(body.password, salt)
+    
+        // Sends to database
+        const user = await prisma.User.create({
+            data: {
+                email: body.email,
+                password: passwordHash,
+                salt: salt,
+            }
+        })
+        return { data: 'success!' }
+    } catch (error) {
+        // console.error(error.code)
+        if(error.code == 'P2002') {
+            throw createError({
+                statusCode: 409,
+                message: 'An email with this address already exist.',
+            })
         }
-    })
-    return { data: 'success!' }
+
+        throw error
+    }
 })
 
 // GET
