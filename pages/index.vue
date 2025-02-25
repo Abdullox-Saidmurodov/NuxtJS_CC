@@ -15,19 +15,21 @@
                             'bg-[#A1842C]' : note.id === selectedNote.id,
                             'hover:bg-[#A1842C]/50' : note.id !== selectedNote.id,
                         }"
-                        @click="selectedNote = note"
+                        @click="
+                            () => {
+                                selectedNote = note
+                                updatedNote = note.text
+                            }
+                        "
                     >
                         <h3 class="text-sm font-bold text-[#D6D6D6] truncate">
                             {{ note.text.substring(0, 50) }}
                         </h3>
                         <div class="leading-none truncate text-[#D6D6D6]">
                             <span class="text-xs text-[#F4F4F5] mr-4">{{ 
-                                new Date(note.updatedAt).toDateString() ===
-                                new Date().toDateString()
-                                    ? 'Today'
-                                    : new Date(note.updatedAt).toLocaleDateString()
+                                new Date(note.updatedAt).toLocaleDateString()
                             }}</span>
-                            <span class="text-xs text-[#D6D6D6]">... {{ note.text.substring(50, 100) }}</span>
+                            <span v-if="note.text.length > 50" class="text-xs text-[#D6D6D6]">... {{ note.text.substring(50, 100) }}</span>
                         </div>
                     </div>
                 </div>
@@ -99,7 +101,11 @@
         <!-- note container -->
          <div class="w-full flex flex-col">
             <div class="flex justify-between w-full items-start p-8">
-                <button class="inline-flex items-center text-xs text-[#C2C2C5] font-bold hover:text-white space-x-2">
+                <button 
+                    class="inline-flex items-center text-xs text-[#C2C2C5] 
+                           font-bold hover:text-white space-x-2"
+                    @click="createNewNote"
+                >
                     <PencilIcon />
                     <span>Create Note</span>
                 </button>
@@ -112,13 +118,18 @@
                 <p class="text-[#929292] font-playfair">
                     {{ new Date(selectedNote.updatedAt).toLocaleDateString() }}
                 </p>
-                <textarea 
+                <textarea
+                    ref="textarea"
                     v-model="updatedNote"
                     name="note" 
                     id="note" 
                     class="text-[#D4D4D4] my-4 font-playfair w-full bg-transparent 
                             focus:outline-none resize-none flex-grow"
-                    @input="debouncedFn"
+                    @input="
+                    () => {
+                        debouncedFn()
+                        selectedNote.text = updatedNote
+                    }"
                 ></textarea>
                 <!-- {{ selectedNote.text }} -->
                 <p class="text-[#D4D4D4]"></p>
@@ -132,13 +143,27 @@
 const updatedNote = ref('')
 const notes = ref([])
 const selectedNote = ref({})
-
+const textarea = ref(null)
 definePageMeta({
     middleware: ['auth'],
 })
 
+async function createNewNote() {
+    try {
+        const newNote = await $fetch(`/api/notes`, {
+            method: 'POST',
+        })
+
+        notes.value.unshift(newNote)
+        selectedNote.value = notes.value[0]
+        updatedNote.value = ''
+        textarea.value.focus()
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 const debouncedFn = useDebounceFn(async () => {
-//   console.log('sdlvnk')
     await updateNote()
 }, 1000)
 
@@ -156,10 +181,11 @@ async function updateNote() {
 }
 
 const todaysNotes = computed(() => {
-    return notes.value.filter((note) => {
-        const noteDate = new Date(note.updatedAt)
-        return noteDate.toDateString() === new Date().toDateString()
-    })
+    return notes.value
+        .filter((note) => {
+            const noteDate = new Date(note.updatedAt)
+            return noteDate.toDateString() === new Date().toDateString()
+        })
 })
 
 const yesterdaysNotes = computed(() => {
@@ -185,9 +211,13 @@ const earlierNotes = computed(() => {
 onMounted(async () => {
     notes.value = await $fetch('/api/notes')
 
+    notes.value.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+
     if(notes.value.length > 0)
     selectedNote.value = notes.value[0]
 
     updatedNote.value = selectedNote.value.text
+
+    textarea.value.focus()
 })
 </script>

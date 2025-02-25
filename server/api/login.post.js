@@ -48,18 +48,12 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // const passwordHash = await bcrypt.compare(body.password, )
-
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET)
-
-        // console.log('TOKEN:')
-        // console.log(token)
 
         setCookie(event, 'NoteNestJWT', token)
 
         return { data: 'success!' }
     } catch (error) {
-        // console.error(error.code)
         if(error.code == 'P2002') {
             throw createError({
                 statusCode: 409,
