@@ -2,7 +2,6 @@
     <div class="flex bg-zinc-900 h-screen">
         <!-- sidebar -->
          <div class="bg-black w-[338px] p-8">
-            <!-- <h1 class="text-white">Register</h1> -->
             <Logo />
             
             <!-- today main container -->
@@ -31,13 +30,6 @@
                             <span class="text-xs text-[#D6D6D6]">... {{ note.text.substring(50, 100) }}</span>
                         </div>
                     </div>
-                    <!-- <div class="p-2">
-                        <h3 class="text-sm font-bold text-[#F4F4F5]">Just finished reading...</h3>
-                        <div class="leading-none">
-                            <span class="text-xs text-[#F4F4F5] mr-4">Today</span>
-                            <span class="text-xs text-[#C2C2C5]">The Midnight Library...</span>
-                        </div>
-                    </div> -->
                 </div>
             </div>
             <!-- /today main container -->
@@ -105,7 +97,7 @@
          </div>
         <!-- /sidebar -->
         <!-- note container -->
-         <div class="w-full">
+         <div class="w-full flex flex-col">
             <div class="flex justify-between w-full items-start p-8">
                 <button class="inline-flex items-center text-xs text-[#C2C2C5] font-bold hover:text-white space-x-2">
                     <PencilIcon />
@@ -116,13 +108,19 @@
                 </button>
             </div>
 
-            <div class="max-w-[437px] mx-auto">
+            <div class="max-w-[437px] mx-auto w-full flex-grow flex flex-col">
                 <p class="text-[#929292] font-playfair">
                     {{ new Date(selectedNote.updatedAt).toLocaleDateString() }}
                 </p>
-                <p class="text-[#D4D4D4] my-4 font-playfair">
-                    {{ selectedNote.text }}
-                </p>
+                <textarea 
+                    v-model="updatedNote"
+                    name="note" 
+                    id="note" 
+                    class="text-[#D4D4D4] my-4 font-playfair w-full bg-transparent 
+                            focus:outline-none resize-none flex-grow"
+                    @input="debouncedFn"
+                ></textarea>
+                <!-- {{ selectedNote.text }} -->
                 <p class="text-[#D4D4D4]"></p>
             </div>
          </div>
@@ -131,6 +129,7 @@
 </template>
 
 <script setup>
+const updatedNote = ref('')
 const notes = ref([])
 const selectedNote = ref({})
 
@@ -138,15 +137,30 @@ definePageMeta({
     middleware: ['auth'],
 })
 
+const debouncedFn = useDebounceFn(async () => {
+//   console.log('sdlvnk')
+    await updateNote()
+}, 1000)
+
+async function updateNote() {
+    try {
+        await $fetch(`/api/notes/${selectedNote.value.id}`, {
+            method: 'PATCH',
+            body: {
+                updatedNote: updatedNote.value,
+            },
+        })
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 const todaysNotes = computed(() => {
     return notes.value.filter((note) => {
         const noteDate = new Date(note.updatedAt)
         return noteDate.toDateString() === new Date().toDateString()
     })
 })
-
-// console.log("noteDate.toDateString()", noteDate.toDateString())
-// console.log("new Date().toDateString()", new Date().toDateString())
 
 const yesterdaysNotes = computed(() => {
     const yesterday = new Date()
@@ -170,12 +184,10 @@ const earlierNotes = computed(() => {
 
 onMounted(async () => {
     notes.value = await $fetch('/api/notes')
-    // console.log(response)
 
     if(notes.value.length > 0)
     selectedNote.value = notes.value[0]
-    console.log("notes", notes.value)
-    console.log("todaysNotes", todaysNotes)
-    console.log("yesterdaysNotes", yesterdaysNotes)
+
+    updatedNote.value = selectedNote.value.text
 })
 </script>
